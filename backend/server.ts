@@ -50,7 +50,7 @@ io.on("connection", (socket) => {
 });
 mongoose
   .connect(
-    "mongodb+srv://sujitmern:sujitmern@cluster0.lthejge.mongodb.net/trello"
+    "m"
   )
   .then(() => {
     console.log("Connected to mongodb");
