@@ -6,21 +6,22 @@ import bodyParser from "body-parser";
 
 const app = express();
 const httpServer = createServer(app);
-const io = new Server(httpServer);
 
-import * as usersControllers from "./src/controllers/users";
-import authMiddleware from "./src/middlwares/auth";
-
-io.on("connection", (socket) => {
-  console.log(socket.id);
+const io = new Server(httpServer, {
+  cors: {
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST"],
+  },
 });
 
-app.use(
-  bodyParser.urlencoded({
-    extended: true,
-  })
-);
+import * as usersControllers from "./src/controllers/users";
+import * as boardControllers from "./src/controllers/boards";
+import authMiddleware from "./src/middlwares/auth";
+import { SocketEventsEnum } from "./src/types/socket-events.enum";
+
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
+
 app.get("/", (req, res) => {
   res.send("API is Live");
 });
@@ -29,9 +30,31 @@ app.post("/api/users", usersControllers.register);
 app.get("/api/user", authMiddleware, usersControllers.currentUser);
 app.post("/api/users/login", usersControllers.login);
 
-mongoose.connect("").then(() => {
-  console.log("Connected to mongodb");
-  app.listen(8000, () => {
-    console.log("App is runnig on port 8000");
+app.get("/api/boards", authMiddleware, boardControllers.getBoards);
+app.get("/api/boards/:boardId", authMiddleware, boardControllers.getBoard);
+app.post("/api/boards", authMiddleware, boardControllers.createBoard);
+io.on("connection", (socket) => {
+  console.log("✅ New client connected:", socket.id);
+
+  socket.on(SocketEventsEnum.boardsJoin, (data) => {
+    boardControllers.joinBoard(io, socket, data);
+  });
+
+  socket.on(SocketEventsEnum.boardLeave, (data) => {
+    boardControllers.leaveBoard(io, socket, data);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("❌ Client disconnected:", socket.id);
   });
 });
+mongoose
+  .connect(
+    "mongodb+srv://sujitmern:sujitmern@cluster0.lthejge.mongodb.net/trello"
+  )
+  .then(() => {
+    console.log("Connected to mongodb");
+    httpServer.listen(8000, () => {
+      console.log("🚀 App + Socket.IO running on port 8000");
+    });
+  });
