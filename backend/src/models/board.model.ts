@@ -10,6 +10,12 @@ const boardSchema = new Schema<BoardDocument>(
       type: Schema.Types.ObjectId,
       ref: "User",
     },
+    members: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
   },
   {
     timestamps: true,

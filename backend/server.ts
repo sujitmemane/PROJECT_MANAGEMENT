@@ -3,6 +3,7 @@ import { createServer } from "http";
 import mongoose from "mongoose";
 import { Server } from "socket.io";
 import bodyParser from "body-parser";
+import cors from "cors";
 
 const app = express();
 const httpServer = createServer(app);
@@ -21,6 +22,11 @@ import { SocketEventsEnum } from "./src/types/socket-events.enum";
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(
+  cors({
+    origin: "*",
+  })
+);
 
 app.get("/", (req, res) => {
   res.send("API is Live");
@@ -36,6 +42,8 @@ app.post("/api/boards", authMiddleware, boardControllers.createBoard);
 io.on("connection", (socket) => {
   console.log("✅ New client connected:", socket.id);
 
+  socket.emit("test", "hello man");
+
   socket.on(SocketEventsEnum.boardsJoin, (data) => {
     boardControllers.joinBoard(io, socket, data);
   });
@@ -48,13 +56,9 @@ io.on("connection", (socket) => {
     console.log("❌ Client disconnected:", socket.id);
   });
 });
-mongoose
-  .connect(
-    "mongodb+srv://sujitmern:sujitmern@cluster0.lthejge.mongodb.net/trello"
-  )
-  .then(() => {
-    console.log("Connected to mongodb");
-    httpServer.listen(8000, () => {
-      console.log("🚀 App + Socket.IO running on port 8000");
-    });
+mongoose.connect(process.env.MONGO_URI).then(() => {
+  console.log("Connected to mongodb");
+  httpServer.listen(8000, () => {
+    console.log("🚀 App + Socket.IO running on port 8000");
   });
+});
