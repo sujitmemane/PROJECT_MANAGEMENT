@@ -56,9 +56,11 @@ io.on("connection", (socket) => {
     console.log("❌ Client disconnected:", socket.id);
   });
 });
+
 mongoose.connect(process.env.MONGO_URI).then(() => {
   console.log("Connected to mongodb");
   httpServer.listen(8000, () => {
     console.log("🚀 App + Socket.IO running on port 8000");
+
   });
 });
