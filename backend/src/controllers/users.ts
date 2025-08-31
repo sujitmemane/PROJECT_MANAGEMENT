@@ -22,16 +22,31 @@ const normalizedUser = (user: UserDocument) => {
   };
 };
 
+const avatars = [
+  "https://api.dicebear.com/7.x/pixel-art/svg?seed=sujeeth",
+  "https://api.dicebear.com/7.x/pixel-art-neutral/svg?seed=sujeeth",
+  "https://api.dicebear.com/7.x/identicon/svg?seed=sujeeth",
+  "https://api.dicebear.com/7.x/bottts/svg?seed=sujeeth",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=sujeeth",
+  "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=sujeeth",
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=sujeeth",
+  "https://api.dicebear.com/7.x/croodles/svg?seed=sujeeth",
+  "https://api.dicebear.com/7.x/croodles-neutral/svg?seed=sujeeth",
+  "https://api.dicebear.com/7.x/thumbs/svg?seed=sujeeth",
+];
+
 export const register = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<any> => {
   try {
+    const random = Math.round(Math.random() * 10);
     const newUser = new UserModel({
       email: req.body.email,
       password: req.body.password,
       username: req.body.username,
+      avatar: avatars[random],
     });
     const savedUser = await newUser.save();
     res.send(normalizedUser(savedUser));

@@ -11,7 +11,7 @@ export default async (
 ) => {
   try {
     const authHeder = req.headers.authorization;
-    console.log("auth", authHeder);
+
     if (!authHeder) {
       return res.status(401);
     }
