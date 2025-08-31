@@ -98,6 +98,7 @@ boardNamespace.on("connection", (socket) => {
   });
 });
 
+
 app.post("/api/users", usersControllers.register);
 app.get("/api/user", authMiddleware, usersControllers.currentUser);
 app.post("/api/users/login", usersControllers.login);
@@ -145,5 +146,6 @@ mongoose.connect(process.env.MONGO_URI).then(() => {
       console.log("Redis connection failed");
     }
     console.log("🚀 App + Redis + Socket.IO running on port 8000");
+
   });
 });
