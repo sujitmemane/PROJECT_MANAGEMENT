@@ -13,6 +13,11 @@ const userSchema = new Schema<UserDocument>(
       },
     },
 
+    avatar: {
+      type: String,
+      default:
+        "https://pbs.twimg.com/profile_images/1950642262905696256/h8thifV2_400x400.jpg",
+    },
     username: {
       type: String,
       required: [true, "Username is required"],
