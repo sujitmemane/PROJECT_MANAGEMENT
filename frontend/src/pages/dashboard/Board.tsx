@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Plus, Edit, Trash } from "lucide-react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
+import { Plus } from "lucide-react";
 import { useSocket } from "@/socket/SocketProvider";
+
+import ColumnComp from "../../components/app/Column";
+import { DndContext, type DragEndEvent } from "@dnd-kit/core";
+import { Button } from "@/components/ui/button";
 
 interface Task {
   _id: string;
@@ -35,6 +37,37 @@ export default function BoardPage() {
   const [board, setBoard] = useState<{ title?: string }>({});
   const { boardId } = useParams();
   const { socket } = useSocket();
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over) return;
+
+    const taskId = active.id;
+    const columnId = over.id;
+
+    let movedTask: any;
+
+    setColumns((prevColumns) =>
+      prevColumns.map((col) => {
+        if (!movedTask) {
+          const taskIndex = col.tasks.findIndex((t) => t._id === taskId);
+          if (taskIndex !== -1) {
+            movedTask = col.tasks[taskIndex];
+            const newTasks = [...col.tasks];
+            newTasks.splice(taskIndex, 1);
+            return { ...col, tasks: newTasks };
+          }
+        }
+
+        if (col._id === columnId && movedTask) {
+          return { ...col, tasks: [...col.tasks, movedTask] };
+        }
+
+        return col;
+      })
+    );
+  };
 
   useEffect(() => {
     if (!socket) return;
@@ -121,10 +154,10 @@ export default function BoardPage() {
     };
     fetchBoard();
   }, [boardId]);
-
   const addColumn = async () => {
     if (!newColumnName.trim()) return;
     const newColPosition = columns.length + 1;
+
     try {
       const response = await axios.post(
         `http://localhost:8000/api/boards/${boardId}/columns`,
@@ -133,6 +166,7 @@ export default function BoardPage() {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         }
       );
+
       if (response.data.success) {
         setNewColumnName("");
         setAddingColumn(false);
@@ -144,12 +178,12 @@ export default function BoardPage() {
 
   const addTask = async (columnId: string) => {
     if (!newTaskText.trim()) return;
-    const selectedColTasks = columns.find((c) => c._id === columnId)?.tasks;
+    const position = columns.find((c) => c._id === columnId)?.tasks.length + 1;
 
     try {
       const response = await axios.post(
         `http://localhost:8000/api/boards/${boardId}/columns/${columnId}/tasks`,
-        { text: newTaskText.trim(), position: selectedColTasks?.length },
+        { text: newTaskText.trim(), position },
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         }
@@ -204,7 +238,6 @@ export default function BoardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6 flex flex-col">
-      {/* Board Header */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-900">
           {board?.title || "Board"}
@@ -231,116 +264,28 @@ export default function BoardPage() {
         </div>
       </div>
 
-      {/* Columns */}
       <div className="flex gap-6 overflow-x-auto pb-4">
-        {columns.map((col) => (
-          <Card
-            key={col._id}
-            className="w-72 flex-shrink-0 bg-white shadow-lg rounded-lg"
-          >
-            <CardHeader className="px-4 py-2 border-b border-gray-200">
-              <CardTitle className="text-lg font-semibold">
-                {col.name}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 py-3 space-y-2">
-              {col.tasks.map((task) => (
-                <div
-                  key={task._id}
-                  className="p-2 bg-gray-100 rounded-md text-gray-800 text-sm shadow-sm hover:bg-gray-200 transition flex justify-between items-center"
-                >
-                  {editingTask === task._id ? (
-                    <>
-                      <input
-                        type="text"
-                        value={newTaskText}
-                        onChange={(e) => setNewTaskText(e.target.value)}
-                        className="border border-gray-300 p-1 rounded text-sm flex-1 mr-2"
-                      />
-                      <Button
-                        size="xs"
-                        onClick={() => updateTask(col._id, task._id)}
-                      >
-                        Save
-                      </Button>
-                      <Button
-                        size="xs"
-                        variant="ghost"
-                        onClick={() => setEditingTask(null)}
-                      >
-                        Cancel
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <span className="flex-1">{task.text}</span>
-                      <div className="flex space-x-1">
-                        <Button
-                          size="xs"
-                          variant="ghost"
-                          onClick={() => {
-                            setEditingTask(task._id);
-                            setNewTaskText(task.text);
-                          }}
-                        >
-                          <Edit className="w-3 h-3" />
-                        </Button>
-                        <Button
-                          size="xs"
-                          variant="ghost"
-                          onClick={() => deleteTask(col._id, task._id)}
-                        >
-                          <Trash className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              ))}
+        <div className="flex gap-4">
+          <DndContext onDragEnd={handleDragEnd}>
+            {columns.map((col) => (
+              <ColumnComp
+                key={col._id}
+                column={col}
+                addingTask={addingTask}
+                setAddingTask={setAddingTask}
+                newTaskText={newTaskText}
+                setNewTaskText={setNewTaskText}
+                editingTask={editingTask}
+                setEditingTask={setEditingTask}
+                addTask={addTask}
+                updateTask={updateTask}
+                deleteTask={deleteTask}
+              />
+            ))}
+          </DndContext>
+        </div>
 
-              {addingTask === col._id ? (
-                <div className="space-y-2 mt-2">
-                  <input
-                    type="text"
-                    value={newTaskText}
-                    onChange={(e) => setNewTaskText(e.target.value)}
-                    placeholder="Enter task..."
-                    autoFocus
-                    className="w-full border border-gray-300 p-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-black"
-                  />
-                  <div className="flex space-x-2">
-                    <Button
-                      size="sm"
-                      className="bg-black text-white hover:bg-gray-900"
-                      onClick={() => addTask(col._id)}
-                    >
-                      Add
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setAddingTask(null)}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="w-full justify-start text-gray-600 hover:text-black"
-                  onClick={() => setAddingTask(col._id)}
-                >
-                  <Plus className="h-4 w-4 mr-1" /> Add Task
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-
-        {/* Add New Column */}
-        <Card className="w-72 flex-shrink-0 bg-gray-100 border-dashed border-2 border-gray-300 rounded-lg p-4">
+        <div className="w-72 flex-shrink-0">
           {!addingColumn ? (
             <Button
               size="sm"
@@ -378,7 +323,7 @@ export default function BoardPage() {
               </div>
             </div>
           )}
-        </Card>
+        </div>
       </div>
     </div>
   );
