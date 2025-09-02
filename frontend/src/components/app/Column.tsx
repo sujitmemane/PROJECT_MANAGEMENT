@@ -2,9 +2,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus } from "lucide-react";
 import Task from "./Task";
 import { Button } from "../ui/button";
-import { useDraggable, useDroppable } from "@dnd-kit/core";
 
 interface ColumnProps {
+  boardId: string;
   column: { _id: string; name: string; tasks: any[] };
   addingTask: string | null;
   newTaskText: string;
@@ -18,6 +18,7 @@ interface ColumnProps {
 }
 
 export default function ColumnComp({
+  boardId,
   column,
   addingTask,
   setAddingTask,
@@ -29,14 +30,8 @@ export default function ColumnComp({
   updateTask,
   deleteTask,
 }: ColumnProps) {
-  const { setNodeRef } = useDroppable({
-    id: column?._id,
-  });
   return (
-    <Card
-      ref={setNodeRef}
-      className="w-72 flex-shrink-0 bg-white shadow-lg rounded-lg"
-    >
+    <Card className="w-72 flex-shrink-0 bg-white shadow-lg rounded-lg">
       <CardHeader className="px-4 py-2 border-b border-gray-200">
         <CardTitle className="text-lg font-semibold">{column.name}</CardTitle>
       </CardHeader>
@@ -44,16 +39,12 @@ export default function ColumnComp({
         {column.tasks.map((task) => (
           <Task
             key={task._id}
+            boardId={boardId}
+            columnId={column._id}
             task={task}
-            editingTask={editingTask}
-            setEditingTask={setEditingTask}
-            newTaskText={newTaskText}
-            setNewTaskText={setNewTaskText}
-            updateTask={(taskId) => updateTask(column._id, taskId)}
             deleteTask={(taskId) => deleteTask(column._id, taskId)}
           />
         ))}
-
         {addingTask === column._id ? (
           <div className="space-y-2 mt-2">
             <input

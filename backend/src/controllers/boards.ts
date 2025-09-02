@@ -243,39 +243,6 @@ export const createTask = async (
   }
 };
 
-export const updateTask = async (
-  req: ExpressRequestInterface,
-  res: Response
-) => {
-  try {
-    const { boardId, columnId, taskId } = req.params;
-    const { text, position } = req.body;
-
-    const task = await TaskModel.findByIdAndUpdate(
-      taskId,
-      { text, position },
-      { new: true }
-    );
-
-    if (!task) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Task not found" });
-    }
-
-    boardNamespace
-      .to(`board:${boardId}`)
-      .emit(SocketEventsEnum.taskUpdated, { ...task.toObject(), columnId });
-
-    return res.status(200).json({ success: true, data: task });
-  } catch (error) {
-    console.error("Error updating task:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Something went wrong" });
-  }
-};
-
 export const deleteTask = async (
   req: ExpressRequestInterface,
   res: Response
@@ -290,3 +257,81 @@ export const deleteTask = async (
 
   return res.status(201).json({ success: true, data: task });
 };
+
+export const boardInformation = async (req: Request, res: Response) => {
+  const { boardId } = req.params;
+  try {
+    const columns = await ColumnModel.find({
+      boardId: boardId,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Board information fetched",
+      data: columns,
+    });
+  } catch (error) {}
+};
+
+export const ColumnInformation = async (req: Request, res: Response) => {
+  const { columnId } = req.params;
+  try {
+    const tasks = await TaskModel.find({
+      columnId: columnId,
+    });
+    return res.status(200).json({
+      success: true,
+      message: "Board information fetched",
+      data: tasks,
+    });
+  } catch (error) {}
+};
+
+// export const updateTask= async(req:Request,res:Response){}
+// try {
+
+// } catch (error) {
+
+// }
+
+// export const updateTask = async (
+//   req: ExpressRequestInterface,
+//   res: Response
+// ) => {
+//   try {
+//     const { boardId, columnId, taskId } = req.params;
+//     // const { text, position } = req.body;
+
+//     const  {boardId,currentColumnId,text,currentTaskPosition,currentT,taskId,selectedColumnId,selectedPosition} = req.body
+//   // Just Change task column id , get net column Id and attach to task
+//   // for task position get current position, get selected position
+//   // get exchanged task posotion and replace with selected task old positoon and swap it
+
+//     const task = await TaskModel.findByIdAndUpdate(
+//       taskId,
+//       { text, position:selectedPosition,columnId:selectedColumnId },
+//       { new: true }
+//     );
+
+//     const oldTask = await TaskModel.findOneAndUpdate({
+//       col
+//     })
+
+//     if (!task) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "Task not found" });
+//     }
+
+//     boardNamespace
+//       .to(`board:${boardId}`)
+//       .emit(SocketEventsEnum.taskUpdated, { ...task.toObject(), columnId });
+
+//     return res.status(200).json({ success: true, data: task });
+//   } catch (error) {
+//     console.error("Error updating task:", error);
+//     return res
+//       .status(500)
+//       .json({ success: false, message: "Something went wrong" });
+//   }
+// };

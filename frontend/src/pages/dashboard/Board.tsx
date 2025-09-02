@@ -5,7 +5,6 @@ import { Plus } from "lucide-react";
 import { useSocket } from "@/socket/SocketProvider";
 
 import ColumnComp from "../../components/app/Column";
-import { DndContext, type DragEndEvent } from "@dnd-kit/core";
 import { Button } from "@/components/ui/button";
 
 interface Task {
@@ -35,39 +34,8 @@ export default function BoardPage() {
   const [newTaskText, setNewTaskText] = useState("");
   const [activeUsers, setActiveUsers] = useState<User[]>([]);
   const [board, setBoard] = useState<{ title?: string }>({});
-  const { boardId } = useParams();
+  const { boardId = " " } = useParams();
   const { socket } = useSocket();
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (!over) return;
-
-    const taskId = active.id;
-    const columnId = over.id;
-
-    let movedTask: any;
-
-    setColumns((prevColumns) =>
-      prevColumns.map((col) => {
-        if (!movedTask) {
-          const taskIndex = col.tasks.findIndex((t) => t._id === taskId);
-          if (taskIndex !== -1) {
-            movedTask = col.tasks[taskIndex];
-            const newTasks = [...col.tasks];
-            newTasks.splice(taskIndex, 1);
-            return { ...col, tasks: newTasks };
-          }
-        }
-
-        if (col._id === columnId && movedTask) {
-          return { ...col, tasks: [...col.tasks, movedTask] };
-        }
-
-        return col;
-      })
-    );
-  };
 
   useEffect(() => {
     if (!socket) return;
@@ -154,6 +122,7 @@ export default function BoardPage() {
     };
     fetchBoard();
   }, [boardId]);
+
   const addColumn = async () => {
     if (!newColumnName.trim()) return;
     const newColPosition = columns.length + 1;
@@ -266,23 +235,22 @@ export default function BoardPage() {
 
       <div className="flex gap-6 overflow-x-auto pb-4">
         <div className="flex gap-4">
-          <DndContext onDragEnd={handleDragEnd}>
-            {columns.map((col) => (
-              <ColumnComp
-                key={col._id}
-                column={col}
-                addingTask={addingTask}
-                setAddingTask={setAddingTask}
-                newTaskText={newTaskText}
-                setNewTaskText={setNewTaskText}
-                editingTask={editingTask}
-                setEditingTask={setEditingTask}
-                addTask={addTask}
-                updateTask={updateTask}
-                deleteTask={deleteTask}
-              />
-            ))}
-          </DndContext>
+          {columns.map((col) => (
+            <ColumnComp
+              key={col._id}
+              boardId={boardId}
+              column={col}
+              addingTask={addingTask}
+              setAddingTask={setAddingTask}
+              newTaskText={newTaskText}
+              setNewTaskText={setNewTaskText}
+              editingTask={editingTask}
+              setEditingTask={setEditingTask}
+              addTask={addTask}
+              updateTask={updateTask}
+              deleteTask={deleteTask}
+            />
+          ))}
         </div>
 
         <div className="w-72 flex-shrink-0">

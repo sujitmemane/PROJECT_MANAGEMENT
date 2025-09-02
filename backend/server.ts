@@ -106,6 +106,18 @@ app.get("/api/boards", authMiddleware, boardControllers.getBoards);
 app.get("/api/boards/:boardId", authMiddleware, boardControllers.getBoard);
 app.post("/api/boards", authMiddleware, boardControllers.createBoard);
 
+app.get(
+  "/api/boards/:boardId/info",
+  authMiddleware,
+  boardControllers.boardInformation
+);
+
+app.get(
+  "/api/boards/:boardId/columns/:columnId/info",
+  authMiddleware,
+  boardControllers.ColumnInformation
+);
+
 app.post(
   "/api/boards/:boardId/columns",
   authMiddleware,
@@ -118,11 +130,11 @@ app.post(
   boardControllers.createTask
 );
 
-app.put(
-  "/api/boards/:boardId/columns/:columnId/tasks/:taskId",
-  authMiddleware,
-  boardControllers.updateTask
-);
+// app.put(
+//   "/api/boards/:boardId/columns/:columnId/tasks/:taskId",
+//   authMiddleware,
+//   boardControllers.updateTask
+// );
 
 app.delete(
   "/api/boards/:boardId/columns/:columnId/tasks/:taskId",
