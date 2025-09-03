@@ -243,39 +243,6 @@ export const createTask = async (
   }
 };
 
-export const updateTask = async (
-  req: ExpressRequestInterface,
-  res: Response
-) => {
-  try {
-    const { boardId, columnId, taskId } = req.params;
-    const { text, position } = req.body;
-
-    const task = await TaskModel.findByIdAndUpdate(
-      taskId,
-      { text, position },
-      { new: true }
-    );
-
-    if (!task) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Task not found" });
-    }
-
-    boardNamespace
-      .to(`board:${boardId}`)
-      .emit(SocketEventsEnum.taskUpdated, { ...task.toObject(), columnId });
-
-    return res.status(200).json({ success: true, data: task });
-  } catch (error) {
-    console.error("Error updating task:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Something went wrong" });
-  }
-};
-
 export const deleteTask = async (
   req: ExpressRequestInterface,
   res: Response
@@ -289,4 +256,71 @@ export const deleteTask = async (
     .emit(SocketEventsEnum.taskDeleted, { taskId, columnId });
 
   return res.status(201).json({ success: true, data: task });
+};
+
+export const boardInformation = async (req: Request, res: Response) => {
+  const { boardId } = req.params;
+  try {
+    const columns = await ColumnModel.find({
+      boardId: boardId,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Board information fetched",
+      data: columns,
+    });
+  } catch (error) {}
+};
+
+export const ColumnInformation = async (req: Request, res: Response) => {
+  const { columnId } = req.params;
+  try {
+    const tasks = await TaskModel.find({
+      columnId: columnId,
+    });
+    return res.status(200).json({
+      success: true,
+      message: "Board information fetched",
+      data: tasks,
+    });
+  } catch (error) {}
+};
+
+export const updateTask = async (
+  req: ExpressRequestInterface,
+  res: Response
+) => {
+  try {
+    const { boardId, taskId, text } = req.body;
+
+    if (!boardId || !taskId || !text) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields",
+      });
+    }
+
+    const task = await TaskModel.findById(taskId);
+    if (!task) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Task not found" });
+    }
+
+    task.text = text;
+    await task.save();
+
+    boardNamespace.to(`board:${boardId}`).emit(SocketEventsEnum.taskMoved, {
+      task: task?.toObject(),
+      columnId: task?.columnId,
+    });
+
+    return res.status(200).json({ success: true, data: task });
+  } catch (error) {
+    console.error("Error updating task:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Something went wrong" });
+  }
 };
