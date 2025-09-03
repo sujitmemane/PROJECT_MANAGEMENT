@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 interface Task {
   _id: string;
   text: string;
+  position: number;
 }
 
 interface Column {
@@ -57,20 +58,20 @@ export default function BoardPage() {
       );
     };
 
-    const handleTaskUpdated = (data: Task & { columnId: string }) => {
-      setColumns((prevCols) =>
-        prevCols.map((col) =>
-          col._id === data.columnId
-            ? {
-                ...col,
-                tasks: col.tasks.map((task) =>
-                  task._id === data._id ? { ...task, text: data.text } : task
-                ),
-              }
-            : col
-        )
-      );
-    };
+    // const handleTaskUpdated = (data: Task & { columnId: string }) => {
+    //   setColumns((prevCols) =>
+    //     prevCols.map((col) =>
+    //       col._id === data.columnId
+    //         ? {
+    //             ...col,
+    //             tasks: col.tasks.map((task) =>
+    //               task._id === data._id ? { ...task, text: data.text } : task
+    //             ),
+    //           }
+    //         : col
+    //     )
+    //   );
+    // };
 
     const handleTaskDeleted = (data: { taskId: string; columnId: string }) => {
       setColumns((prevCols) =>
@@ -84,8 +85,30 @@ export default function BoardPage() {
         )
       );
     };
+    const handleTaskMoved = ({
+      task,
+      columnId,
+    }: {
+      task: Task;
+      columnId: string;
+    }) => {
+      console.log(task, columnId);
+      setColumns((prevCols) =>
+        prevCols.map((col) => {
+          if (col._id === columnId) {
+            return {
+              ...col,
+              tasks: col.tasks.map((t) =>
+                t._id === task._id ? { ...t, text: task.text } : t
+              ),
+            };
+          }
+          return col;
+        })
+      );
+    };
 
-    socket.on("column:created", (data) => {
+    socket.on("column:created", (data: any) => {
       setColumns((prevCols) => {
         const updatedCols = [...prevCols, data];
         updatedCols.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
@@ -94,16 +117,17 @@ export default function BoardPage() {
     });
 
     socket.on("task:created", handleTaskCreated);
-    socket.on("task:updated", handleTaskUpdated);
+    // socket.on("task:updated", handleTaskUpdated);
     socket.on("task:deleted", handleTaskDeleted);
-
+    socket.on("task:moved", handleTaskMoved);
     return () => {
       socket.off("board:users");
       socket.emit("board:leave", { boardId });
       socket.off("column:created");
       socket.off("task:created", handleTaskCreated);
-      socket.off("task:updated", handleTaskUpdated);
+      // socket.off("task:updated", handleTaskUpdated);
       socket.off("task:deleted", handleTaskDeleted);
+      socket.off("task:moved", handleTaskMoved);
     };
   }, [socket, boardId]);
 

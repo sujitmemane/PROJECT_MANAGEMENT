@@ -130,11 +130,7 @@ app.post(
   boardControllers.createTask
 );
 
-// app.put(
-//   "/api/boards/:boardId/columns/:columnId/tasks/:taskId",
-//   authMiddleware,
-//   boardControllers.updateTask
-// );
+app.put("/api/boards/update", authMiddleware, boardControllers.updateTask);
 
 app.delete(
   "/api/boards/:boardId/columns/:columnId/tasks/:taskId",

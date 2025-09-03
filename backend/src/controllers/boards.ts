@@ -287,51 +287,40 @@ export const ColumnInformation = async (req: Request, res: Response) => {
   } catch (error) {}
 };
 
-// export const updateTask= async(req:Request,res:Response){}
-// try {
+export const updateTask = async (
+  req: ExpressRequestInterface,
+  res: Response
+) => {
+  try {
+    const { boardId, taskId, text } = req.body;
 
-// } catch (error) {
+    if (!boardId || !taskId || !text) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields",
+      });
+    }
 
-// }
+    const task = await TaskModel.findById(taskId);
+    if (!task) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Task not found" });
+    }
 
-// export const updateTask = async (
-//   req: ExpressRequestInterface,
-//   res: Response
-// ) => {
-//   try {
-//     const { boardId, columnId, taskId } = req.params;
-//     // const { text, position } = req.body;
+    task.text = text;
+    await task.save();
 
-//     const  {boardId,currentColumnId,text,currentTaskPosition,currentT,taskId,selectedColumnId,selectedPosition} = req.body
-//   // Just Change task column id , get net column Id and attach to task
-//   // for task position get current position, get selected position
-//   // get exchanged task posotion and replace with selected task old positoon and swap it
+    boardNamespace.to(`board:${boardId}`).emit(SocketEventsEnum.taskMoved, {
+      task: task?.toObject(),
+      columnId: task?.columnId,
+    });
 
-//     const task = await TaskModel.findByIdAndUpdate(
-//       taskId,
-//       { text, position:selectedPosition,columnId:selectedColumnId },
-//       { new: true }
-//     );
-
-//     const oldTask = await TaskModel.findOneAndUpdate({
-//       col
-//     })
-
-//     if (!task) {
-//       return res
-//         .status(404)
-//         .json({ success: false, message: "Task not found" });
-//     }
-
-//     boardNamespace
-//       .to(`board:${boardId}`)
-//       .emit(SocketEventsEnum.taskUpdated, { ...task.toObject(), columnId });
-
-//     return res.status(200).json({ success: true, data: task });
-//   } catch (error) {
-//     console.error("Error updating task:", error);
-//     return res
-//       .status(500)
-//       .json({ success: false, message: "Something went wrong" });
-//   }
-// };
+    return res.status(200).json({ success: true, data: task });
+  } catch (error) {
+    console.error("Error updating task:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Something went wrong" });
+  }
+};
